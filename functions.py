@@ -4,6 +4,9 @@ import os
 import datetime
 from datetime import timedelta
 import csv
+import pandas as pd
+
+#functions for engine
 
 def checkIfProcessRunning(processName):
     '''
@@ -110,9 +113,121 @@ def getProcessUptime(processName):
 
     return uptime
 
+def getCurrentUptimesAndNames():
+    '''
+    Listing all currently executed programs plus their current runtimes
+    :return: Data that can be saved by saveData(data) into csv
+    '''
+    runningproc = runningProcessesImportant()
+    data = []
+    for proc in runningproc:
+        data.append([proc, getProcessUptime(proc)])
+    return data
+
+#functions for csv-data
+
+def saveUptimes(data):
+    '''
+    Provisional saveData function
+    :param data: Data of executed (important) programs and their runtime
+    :return: 0 (mainly for saving a .csv file)
+    '''
+    dataframe = pd.DataFrame(data, columns=['Name', 'Uptime'])
+    dataframe.to_csv(r'C:\Users\Manuel Kleinschmager\Desktop\Time Tracker\Uptimes.csv')
+    return 0
+
+def saveCurrentUptimes(data):
+    '''
+        Provisional saveData function
+        :param data: Data of currently executed (important) programs and their runtime
+        :return: 0 (mainly for saving a .csv file)
+        '''
+    dataframe = pd.DataFrame(data)
+    dataframe.to_csv(r'C:\Users\Manuel Kleinschmager\Desktop\Time Tracker\CurrentUptimes.csv')
+    return 0
+
+def readCSV():
+    '''
+    Reads CSV data of current uptimes
+    :return: .csv-savable data
+    '''
+    currentData = pd.read_csv(r'C:\Users\Manuel Kleinschmager\Desktop\Time Tracker\Uptimes.csv', index_col=0)
+    return currentData
+
+def splitUpCSV():
+    '''
+    Function to split up the .csv-file into separat dataFrames to make reading easier
+    :return: b file with *.exe names and c file with uptimes
+    '''
+    data = readCSV()
+    names = data['Name']
+    uptimes = data['Uptime']
+    return names, uptimes
+
+def getAssociatedCSVUptime(proc):
+    '''
+
+    :param proc: name of process
+    :return: Asscociated CSV-Uptime to process
+    '''
+    data = readCSV()
+    b = data.loc['1', 'Names']
+    return b
+
+#other functions
+
+def execute():
+    '''
+
+    :return:
+    '''
+    #saving (important) executables
+    uptimes = getCurrentUptimesAndNames()
+    saveUptimes(uptimes)
+
+    # load data csv
+    database = readCSV()
+
+    while True:
+
+        #load data engine
+        currentProcesses = runningProcessesImportant()
+        currentUptimes = getCurrentUptimesAndNames()
+
+        #setting currently running executables to new value
+        index = 0
+        for name in database['Name']:
+            if checkIfProcessRunning(name):
+                database.iloc[index, 1] = getProcessUptime(name)
+
+            index = index + 1
+
+        index2 = 0
+        for name in currentProcesses:
+            if name in database['Name']:
+                print('no')
+            else:
+                runTime = currentUptimes[index2][1]
+                dataFrame = pd.DataFrame([[name, runTime]], columns=['Name', 'Uptime'])
+                database.append(dataFrame)
+
+            index2 = index2 + 1
+            #TODO list index out of range error
+
+        print(database)
+        time.sleep(10)
 
 
-def saveData(data):
-    #TODO Marius
-            
+
+
+    #TODO: check if *.exe are still running
+
+        #TODO: YES: update data by overwriting existing data to that executable
+        #TODO: NO: pass
+
+    #TODO: check if already saved executable is running again
+        #TODO: YES: update runtime by adding new current runtime to existing runtime
+        #TODO: NO: pass
+    #time.sleep(10)
+
     return 0
